@@ -44,6 +44,22 @@ class FrameSize:
         return self.width == other.width and self.height == other.height
 
 
+class FrameInterval:
+
+    def __init__(self, numerator: int = 0, denominator: int = 0) -> None:
+        self.numerator = numerator
+        self.denominator = denominator
+
+    def __str__(self) -> str:
+        if self.numerator != 0:
+            return str(self.denominator / self.numerator)
+        else:
+            return "0.0"
+
+    def __eq__(self, other: FrameInterval) -> bool:
+        return self.numerator == other.numerator and self.denominator == other.denominator
+
+
 class Device:
     """Class representing a v4l2 device"""
 
@@ -347,6 +363,111 @@ class Device:
                 self._controls[ctrl_idx] = ctrl
                 return ctrl
 
+    def get_available_frame_intervals(
+            self, color_format: ColorFormat,
+            frame_size: FrameSize) -> List[FrameInterval]:
+        """
+        Get available fram intervals for given color format and frame size
+
+        Parameters
+        ----------
+        color_format : ColorFormat
+            Chosen color format
+        frame_size : FrameSize
+            Chosen frame size
+
+        Rises
+        -----
+        DeviceNotSupportVideoCapture
+            If this device does not support video capture
+        UnsupportedColorFormat
+            If given color format is not supported by the device
+        UnsupportedFrameSize
+            If given frame size is not supported by the device
+        """
+
+        if not self.is_video_capture_capable:
+            raise DeviceNotSupportVideoCapture(self.path)
+        if not any(color_format == available_format
+                   for available_format in self._available_formats.keys()):
+            raise UnsupportedColorFormat(self.path, color_format)
+        if not any(
+                frame_size == available_size
+                for available_size in self._available_formats[color_format]):
+            raise UnsupportedFrameSize(self.path, color_format, frame_size)
+
+        intervals = []
+        with open(self.path) as f_cam:
+            frmival = v4l2_frmivalenum()
+            frmival.pixel_format = color_format.pixelformat
+            frmival.width = frame_size.width
+            frmival.height = frame_size.height
+
+            while True:
+                try:
+                    ioctl(f_cam, VIDIOC_ENUM_FRAMEINTERVALS, frmival)
+                except OSError:
+                    break
+
+                frmival.index += 1
+                if frmival.type == V4L2_FRMIVAL_TYPE_DISCRETE:
+                    intervals.append(
+                        FrameInterval(frmival.discrete.numerator,
+                                      frmival.discrete.denominator))
+
+        return intervals
+
+    def set_frame_interval(self, interval: FrameInterval) -> None:
+        """
+        Set frame interval
+
+        Parameters
+        ----------
+        interval : FrameInterval
+
+        Raises
+        ------
+        DeviceNotSupportVideoCapture
+            If this device does not support video capture
+        WrongFrameInterval
+            If given interval is not supported with currently used color format and frame size
+        """
+
+        if not self.is_video_capture_capable:
+            raise DeviceNotSupportVideoCapture(self.path)
+
+        color_format, frame_size = self.get_format()
+        available_intervals = self.get_available_frame_intervals(
+            color_format, frame_size)
+
+        if not any(interval == available_interval
+                   for available_interval in available_intervals):
+            raise WrongFrameInterval(interval, color_format, frame_size)
+
+        with open(self.path) as f_cam:
+            streamparm = v4l2_streamparm()
+            streamparm.type = V4L2_BUF_TYPE_VIDEO_CAPTURE
+            ioctl(f_cam, VIDIOC_G_PARM, streamparm)
+
+            streamparm.parm.capture.timeperframe.numerator = interval.numerator
+            streamparm.parm.capture.timeperframe.denominator = interval.denominator
+            ioctl(f_cam, VIDIOC_S_PARM, streamparm)
+
+    def get_frame_interval(self) -> FrameInterval:
+        if not self.is_video_capture_capable:
+            raise DeviceNotSupportVideoCapture(self.path)
+
+        interval = FrameInterval()
+        with open(self.path) as f_cam:
+            streamparm = v4l2_streamparm()
+            streamparm.type = V4L2_BUF_TYPE_VIDEO_CAPTURE
+            ioctl(f_cam, VIDIOC_G_PARM, streamparm)
+
+            interval.numerator = streamparm.parm.capture.timeperframe.numerator
+            interval.denominator = streamparm.parm.capture.timeperframe.denominator
+
+        return interval
+
     @property
     def driver_name(self) -> str:
         return self._driver
@@ -587,3 +708,15 @@ class WrongStringValue(ValueError):
 
     def __str__(self) -> str:
         return f"'{self.value}' is not a valid string for '{self.control.name}'. Its length should be equal to {self.control.minimum} - {self.control.maximum} (step: {self.control.step}), but it is {len(self.value)}"
+
+
+class WrongFrameInterval(ValueError):
+
+    def __init__(self, interval: FrameInterval, color_format: ColorFormat,
+                 frame_size: FrameSize) -> None:
+        self.interval = interval
+        self.color_format = color_format
+        self.frame_size = frame_size
+
+    def __str__(self) -> str:
+        return f"{self.interval.numerator} / {self.interval.denominator} ({self.interval.denominator / self.interval.numerator} fps) frame interval is not supported for {self.color_format} color format and {self.frame_size} frame size"

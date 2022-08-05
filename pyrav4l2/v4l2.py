@@ -178,6 +178,13 @@ V4L2_MEMORY_USERPTR = 2
 V4L2_MEMORY_OVERLAY = 3
 V4L2_MEMORY_DMABUF = 4
 
+V4L2_CAP_TIMEPERFRAME = 0x1000
+V4L2_MODE_HIGHQUALITY = 0x0001
+
+V4L2_FRMIVAL_TYPE_DISCRETE = 1
+V4L2_FRMIVAL_TYPE_CONTINUOUS = 2
+V4L2_FRMIVAL_TYPE_STEPWISE = 3
+
 
 #
 # v4l structures
@@ -1050,6 +1057,49 @@ V4L2_PIX_FMT_IPU3_SGRBG10 = v4l2_fourcc('i', 'p', '3',
 V4L2_PIX_FMT_IPU3_SRGGB10 = v4l2_fourcc('i', 'p', '3',
                                         'r')  # IPU3 packed 10-bit RGGB bayer
 
+
+class v4l2_frmival_stepwise(ctypes.Structure):
+    _fields_ = [
+        ("min", v4l2_fract),
+        ("max", v4l2_fract),
+        ("step", v4l2_fract),
+    ]
+
+    min = v4l2_fract()
+    max = v4l2_fract()
+    step = v4l2_fract()
+
+
+class v4l2_frmivalenum(ctypes.Structure):
+
+    class _anonymous(ctypes.Union):
+        _fields_ = [
+            ("discrete", v4l2_fract),
+            ("stepwise", v4l2_frmival_stepwise),
+        ]
+
+    _fields_ = [
+        ("index", ctypes.c_uint32),
+        ("pixel_format", ctypes.c_uint32),
+        ("width", ctypes.c_uint32),
+        ("height", ctypes.c_uint32),
+        ("type", ctypes.c_uint32),
+        ("_", _anonymous),
+        ("reserved", ctypes.c_uint32 * 2),
+    ]
+
+    _anonymous_ = ("_", )
+
+    index = None
+    pixel_format = None
+    width = None
+    height = None
+    type = None
+    discrete = v4l2_fract()
+    stepwise = v4l2_frmival_stepwise()
+    reserved = None
+
+
 #
 # ioctl codes
 #
@@ -1106,4 +1156,5 @@ VIDIOC_QUERYMENU = _IOWR('V', 37, v4l2_querymenu)
 VIDIOC_G_EXT_CTRLS = _IOWR('V', 71, v4l2_ext_controls)
 VIDIOC_S_EXT_CTRLS = _IOWR('V', 72, v4l2_ext_controls)
 VIDIOC_ENUM_FRAMESIZES = _IOWR('V', 74, v4l2_frmsizeenum)
+VIDIOC_ENUM_FRAMEINTERVALS = _IOWR('V', 75, v4l2_frmivalenum)
 VIDIOC_QUERY_EXT_CTRL = _IOWR('V', 103, v4l2_query_ext_ctrl)
