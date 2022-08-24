@@ -363,17 +363,21 @@ class Device:
 
     def _get_control_value(self, control: Type[Control]) -> v4l2_ext_control:
         ctrl = v4l2_ext_control()
+        ctrl.id = control.id
+        if control.type == V4L2_CTRL_TYPE_STRING:
+            ctrl.size = control.maximum + 1
+            ctrl.string = bytes(control.maximum + 1)
+
+        ectrls = v4l2_ext_controls()
+        ectrls.controls = ctypes.pointer(ctrl)
+        ectrls.count = 1
+
         with open(self.path) as f_cam:
-            ctrl.id = control.id
-
-            ectrls = v4l2_ext_controls()
-            ectrls.controls = ctypes.pointer(ctrl)
-            ectrls.count = 1
-
             try:
                 ioctl(f_cam, VIDIOC_G_EXT_CTRLS, ectrls)
             except OSError:
                 pass
+
         return ctrl
 
     def _get_capabilities(self) -> None:
