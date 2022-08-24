@@ -275,18 +275,18 @@ class Device:
             if control.type in [
                     V4L2_CTRL_TYPE_INTEGER, V4L2_CTRL_TYPE_BOOLEAN,
                     V4L2_CTRL_TYPE_BITMASK, V4L2_CTRL_TYPE_MENU,
-                    V4L2_CTRL_TYPE_INTEGER
+                    V4L2_CTRL_TYPE_INTEGER_MENU
             ]:
-                with open(self.path) as f_cam:
-                    ctrl = v4l2_ext_control()
-                    ctrl.id = control.id
-                    ctrl.value = control.default_value
-
-                    ectrls = v4l2_ext_controls()
-                    ectrls.count = 1
-                    ectrls.controls = ctypes.pointer(ctrl)
-
-                    ioctl(f_cam, VIDIOC_S_EXT_CTRLS, ectrls)
+                default_value = control.default_value
+                if control.type == V4L2_CTRL_TYPE_BOOLEAN:
+                    default_value = bool(default_value)
+                elif control.type in [
+                        V4L2_CTRL_TYPE_MENU, V4L2_CTRL_TYPE_INTEGER_MENU
+                ]:
+                    default_value = next(
+                        filter(lambda x: x.index == default_value,
+                               control.items))
+                self._set_value(control, default_value)
         else:
             raise UnsupportedControl(self.path, control)
 
