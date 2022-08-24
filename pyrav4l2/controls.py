@@ -50,6 +50,9 @@ class Item(ABC):
         self.ctrl_id = ctrl_id
         self.index = index
 
+    def __eq__(self, other: Type[Item]) -> bool:
+        return self.ctrl_id == other.ctrl_id and self.index == other.index
+
 
 class MenuItem(Item):
 
