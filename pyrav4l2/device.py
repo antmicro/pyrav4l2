@@ -303,12 +303,49 @@ class Device:
         UnsupportedControl
             If device does not have control with given id
         """
-        if any(control == available_ctrl for available_ctrl in self._controls):
-            self._get_controls()
-            ctrl = next(filter(lambda x: x.id == control.id, self._controls))
-            return ctrl
-        else:
+
+        if not any(control == available_ctrl
+                   for available_ctrl in self._controls):
             raise UnsupportedControl(self.path, control)
+
+        with open(self.path) as f_cam:
+            ctrl = v4l2_query_ext_ctrl()
+            ctrl.id = control.id
+            ioctl(f_cam, VIDIOC_QUERY_EXT_CTRL, ctrl)
+
+            if ctrl.type in [V4L2_CTRL_TYPE_MENU, V4L2_CTRL_TYPE_INTEGER_MENU]:
+                items = []
+                for i in range(ctrl.minimum, ctrl.maximum + 1):
+                    menu = v4l2_querymenu()
+                    menu.id = ctrl.id
+                    menu.index = i
+
+                    try:
+                        ioctl(f_cam, VIDIOC_QUERYMENU, menu)
+                    except OSError:
+                        continue
+
+                    if ctrl.type == V4L2_CTRL_TYPE_MENU:
+                        items.append(MenuItem(ctrl.id, i, menu.name.decode()))
+                    else:
+                        items.append(IntegerMenuItem(ctrl.id, i, menu.value))
+                ctrl = Menu(ctrl, items)
+                ctrl_idx = next(
+                    iter([
+                        idx for idx, el in enumerate(self._controls)
+                        if el == ctrl
+                    ]), -1)
+                self._controls[ctrl_idx] = ctrl
+                return ctrl
+            else:
+                ctrl = Control(ctrl)
+                ctrl_idx = next(
+                    iter([
+                        idx for idx, el in enumerate(self._controls)
+                        if el == ctrl
+                    ]), -1)
+                self._controls[ctrl_idx] = ctrl
+                return ctrl
 
     @property
     def driver_name(self) -> str:
