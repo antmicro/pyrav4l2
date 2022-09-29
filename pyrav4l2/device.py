@@ -158,6 +158,9 @@ class Device:
                     fmt.fmt.pix.height = frame_size.height
                     fmt.fmt.pix.pixelformat = color_format.pixelformat
                     fmt.fmt.pix.field = V4L2_FIELD_ANY
+                    fmt.fmt.pix.colorspace = V4L2_COLORSPACE_DEFAULT
+                    fmt.fmt.pix.bytesperline = 0
+                    fmt.fmt.pix.sizeimage = 0
                     ioctl(f_cam, VIDIOC_S_FMT, fmt)
             else:
                 raise UnsupportedFrameSize(self.path, color_format, frame_size)
