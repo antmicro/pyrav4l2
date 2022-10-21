@@ -379,7 +379,7 @@ class Device:
         frame_size : FrameSize
             Chosen frame size
 
-        Rises
+        Raises
         -----
         DeviceNotSupportVideoCapture
             If this device does not support video capture
