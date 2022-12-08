@@ -2,13 +2,14 @@ name: Running Python CI jobs
 
 on:
   push:
-    branches:
-      - main
-      - test
+    paths:
+      - 'pyrav4l2/**'
+      - 'README.md'
 
   pull_request:
     paths:
       - 'pyrav4l2/**'
+      - 'README.md'
 
 jobs:
   lint-with-yapf:
@@ -16,10 +17,10 @@ jobs:
 
     steps:
       - name: Get repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Set up Python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
@@ -31,3 +32,29 @@ jobs:
       - name: Lint with yapf
         run: |
           ./.github/check_code_formatting.sh
+
+  run-example-scripts-from-readme:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install tuttest
+        run: pip install git+https://github.com/antmicro/tuttest.git
+
+      - name: Extract example scripts from README
+        run: python ./.github/save_examples.py README.md
+
+      - name: Copy examples and pyrav4l2 to shared-dir
+        run: |
+          mkdir -p tests/pyrav4l2
+          cp -r ./pyrav4l2 setup.py ./tests/pyrav4l2
+          cp -r ./examples ./tests
+
+      - name: Run scripts in Renode
+        uses: antmicro/renode-linux-runner-action@main
+        with:
+          shared-dir: ./tests
+          renode-run: |
+            pip install ./pyrav4l2
+            for script in ./examples/*.py; do python $script; done
