@@ -11,6 +11,7 @@ It provides a high level API for controlling camera parameters and streaming fra
 # Examples
 ## Creating device
 You can create a device instance using the path of the V4L2 device:
+<!-- name="creating-device-path" -->
 ```python
 from pyrav4l2 import Device
 
@@ -18,6 +19,7 @@ dev = Device("/dev/video0")
 ```
 
 or by using its ID number:
+<!-- name="creating-device-id" -->
 ```python
 from pyrav4l2 import Device
 
@@ -26,6 +28,7 @@ dev = Device.with_id(0)
 
 ## Getting information about the device
 You can easily get device and driver names and check if the selected device supports video capturing
+<!-- name="info-about-device" -->
 ```python
 from pyrav4l2 import Device
 
@@ -40,6 +43,7 @@ else:
 
 ## Getting information about currently used color format and frame size
 This example shows you how to check what color format and frame size is currently used by the device
+<!-- name="current-format" -->
 ```python
 from pyrav4l2 import Device
 
@@ -51,6 +55,7 @@ print(f"Frame size: {frame_size}")
 
 ## Frame format enumeration and configuration
 Here you can see how to get all supported color formats and frame sizes, and configure the device to use the first one of each.
+<!-- name="creating-device-id" -->
 ```python
 from pyrav4l2 import Device
 
@@ -71,6 +76,7 @@ dev.set_format(color_format, frame_size)
 ## Device controls enumeration and configuration
 This example shows how to get a list of supported controls and iterate over it.
 It prints the names of all controls and resets their values to the default ones.
+<!-- name="controls-enumeration" -->
 ```python
 from pyrav4l2 import Device
 
@@ -85,6 +91,7 @@ for control in available_controls:
 ## Streaming frames
 Here you can see how to stream frame from the camera.
 The script below captures 10 frames and prints their lengths.
+<!-- name="streaming-frames" -->
 ```python
 from pyrav4l2 import Device, Stream
 
