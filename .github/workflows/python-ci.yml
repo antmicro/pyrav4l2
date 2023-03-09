@@ -58,3 +58,4 @@ jobs:
           renode-run: |
             pip install ./pyrav4l2
             for script in ./examples/*.py; do python $script; done
+          devices: vivid
