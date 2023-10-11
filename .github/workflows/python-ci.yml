@@ -10,6 +10,7 @@ on:
     paths:
       - 'pyrav4l2/**'
       - 'README.md'
+  workflow_dispatch:
 
 jobs:
   lint-with-yapf:
