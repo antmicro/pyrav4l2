@@ -53,9 +53,9 @@ jobs:
           cp -r ./examples ./tests
 
       - name: Run scripts in Renode
-        uses: antmicro/renode-linux-runner-action@main
+        uses: antmicro/renode-linux-runner-action@v1
         with:
-          shared-dir: ./tests
+          shared-dirs: ./tests
           renode-run: |
             pip install ./pyrav4l2
             for script in ./examples/*.py; do python $script; done
