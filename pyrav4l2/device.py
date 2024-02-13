@@ -50,14 +50,26 @@ class FrameInterval:
         self.numerator = numerator
         self.denominator = denominator
 
+    def __eq__(self, other: FrameInterval) -> bool:
+        return self.numerator == other.numerator and self.denominator == other.denominator
+
     def __str__(self) -> str:
-        if self.numerator != 0:
-            return str(self.denominator / self.numerator)
+        if self.denominator != 0:
+            return str(self.numerator / self.denominator)
         else:
             return "0.0"
 
-    def __eq__(self, other: FrameInterval) -> bool:
-        return self.numerator == other.numerator and self.denominator == other.denominator
+    def as_float(self) -> float:
+        if self.denominator != 0:
+            return self.numerator / self.denominator
+        else:
+            return 0.0
+
+    def to_frame_rate(self) -> float:
+        if self.numerator != 0:
+            return self.denominator / self.numerator
+        else:
+            return 0.0
 
 
 class Device:
