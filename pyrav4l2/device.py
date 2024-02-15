@@ -59,7 +59,7 @@ class FrameInterval:
         else:
             return "0.0"
 
-    def as_float(self) -> float:
+    def __float__(self) -> float:
         if self.denominator != 0:
             return self.numerator / self.denominator
         else:
