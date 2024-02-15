@@ -65,12 +65,6 @@ class FrameInterval:
         else:
             return 0.0
 
-    def to_frame_rate(self) -> float:
-        if self.numerator != 0:
-            return self.denominator / self.numerator
-        else:
-            return 0.0
-
 
 class Device:
     """Class representing a v4l2 device"""
